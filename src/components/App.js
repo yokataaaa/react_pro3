@@ -1,5 +1,5 @@
 import FoodList from "./FoodList";
-import { getFoods } from "../api";
+import { getFoods, createFood, updateFood, deleteFood } from "../api";
 import { useEffect, useState } from "react";
 import FoodForm from "./FoodForm";
 
@@ -15,7 +15,10 @@ function App() {
 
   const handleNewestClick = () => setOrder("createdAt");
   const handleCalorieClick = () => setOrder("calorie");
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const result = await deleteFood(id);
+    if (!result) return;
+
     const nextItems = items.filter((item) => item.id !== id);
     setItems(nextItems);
   };
@@ -57,6 +60,21 @@ function App() {
     setSearch(e.target["search"].value);
   };
 
+  const handleCreateSuccess = (newItems) => {
+    setItems((prevItems) => [newItems, ...prevItems]);
+  };
+
+  const handleUpdateSuccess = (newItem) => {
+    setItems((prevItems) => {
+      const splitIdx = prevItems.findIndex((item) => item.id === newItem.id);
+      return [
+        ...prevItems.slice(0, splitIdx),
+        newItem,
+        ...prevItems.slice(splitIdx + 1),
+      ];
+    });
+  };
+
   useEffect(() => {
     handleLoad({
       order,
@@ -74,8 +92,13 @@ function App() {
           <button type="submit">검색</button>
         </form>
       </div>
-      <FoodForm />
-      <FoodList items={items} onDelete={handleDelete} />
+      <FoodForm onSubmit={createFood} onSubmitSuccess={handleCreateSuccess} />
+      <FoodList
+        items={items}
+        onUpdate={updateFood}
+        onUpdateSuccess={handleUpdateSuccess}
+        onDelete={handleDelete}
+      />
       {cursor && (
         <button disabled={isLoading} onClick={handleLoadMore}>
           더보기
